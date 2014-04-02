@@ -44,7 +44,7 @@ import org.apache.hadoop.util.StringUtils;
 
 /**
  * Encapsulates a record read from or to be written to Vertica.
- * 
+ *
  * A record consists of a list of columns in a specified order.
  * The list of columns is automatically determined by:
  * <ol>
@@ -54,29 +54,29 @@ import org.apache.hadoop.util.StringUtils;
  *
  * The record also contains many helper functions to serialize/deserialize data
  * into various formats.
- * 
+ *
  */
 public class VerticaRecord implements Writable {
   	private static final Log LOG = LogFactory.getLog("com.vertica.hadoop");
 	/**
 	 * No. of columns in a record.
-	 */ 
+	 */
 	int columns = 0;
-	
+
 	/**
 	 * An ordered list of names of each column.
-	 * There is an entry for each column. However, there is 
+	 * There is an entry for each column. However, there is
 	 * no guarantee that all columns have a name.
 	 */
 	Vector<String> names = null;
-	
+
 	/**
 	 * An ordered list of types of each column
-	 */ 
+	 */
 	Vector<Integer> types = null;
 	/**
 	 * An ordered list of values of each column
-	 */ 
+	 */
 	Vector<Object> values = null;
 	/**
 	 * A map to easily get the position of a column from the name.
@@ -88,7 +88,7 @@ public class VerticaRecord implements Writable {
 	/**
 	 * Default constructor should NOT be invoked by customers.
 	 * Available mainly for Hadoop framework.
-	 */ 
+	 */
 	public VerticaRecord() {
 		names = new Vector<String>();
 		types = new Vector<Integer>();
@@ -105,7 +105,7 @@ public class VerticaRecord implements Writable {
 	 * @throws SQLException JDBC driver or Vertica encounters an error.
 	 */
 
-	public VerticaRecord(Configuration conf) 
+	public VerticaRecord(Configuration conf)
 		throws ClassNotFoundException, SQLException, IOException {
 		VerticaConfiguration config = new VerticaConfiguration(conf);
 		String outTable = config.getOutputTableName();
@@ -113,7 +113,7 @@ public class VerticaRecord implements Writable {
 
 		DatabaseMetaData dbmd = conn.getMetaData();
 		Relation vTable = new Relation(outTable);
-		
+
 		names = new Vector<String>();
 		types = new Vector<Integer>();
 		values = new Vector<Object>();
@@ -121,7 +121,7 @@ public class VerticaRecord implements Writable {
 		HashMap <String, Integer> typeMap = new HashMap<String, Integer>();
 
 		String metaStmt = "select ordinal_position, column_name, data_type, is_identity, data_type_name " +
-			"from v_catalog.odbc_columns " + 
+			"from v_catalog.odbc_columns " +
 			"where schema_name = ? and table_name = ? "
 			+ "order by ordinal_position;";
 
@@ -140,7 +140,7 @@ public class VerticaRecord implements Writable {
 				}
 				nameMap.put(rs.getString(2), index);
 				typeMap.put(rs.getString(2), rs.getInt(3));
-				LOG.debug(columns + ") " + "[" + rs.getInt(1) + "] " + rs.getString(2) + ":" + rs.getInt(3) + ":" + 
+				LOG.debug(columns + ") " + "[" + rs.getInt(1) + "] " + rs.getString(2) + ":" + rs.getInt(3) + ":" +
 					rs.getString(5));
 			} else {
 				LOG.debug("Skipping identity column " + rs.getString(4));
@@ -155,7 +155,7 @@ public class VerticaRecord implements Writable {
 		for (Map.Entry<String, Integer> entry : nameMap.entrySet()) {
 			String key = entry.getKey();
 			Integer value = entry.getValue();
-			
+
 			names.set(value.intValue(), key);
 			types.set(value.intValue(), typeMap.get(key));
 		}
@@ -190,7 +190,7 @@ public class VerticaRecord implements Writable {
 	/**
 	 * Gets the number of columns in the record.
 	 * @return
-	 */ 
+	 */
 	public int size() {
 		return names.size();
 	}
@@ -203,11 +203,11 @@ public class VerticaRecord implements Writable {
 	public Object get(String name) throws IOException {
 		if (names == null || names.size() == 0)
 			throw new IOException("Cannot set record by name if names not initialized");
-		if (!nameMap.containsKey(name)) 
+		if (!nameMap.containsKey(name))
 			throw new IOException("Column \"" + name + "\" does not exist");
 		return values.get(nameMap.get(name));
 	}
-	
+
 	/**
 	 * Gets the object for a column.
 	 * @param pos Ordinal position of the column.
@@ -228,7 +228,7 @@ public class VerticaRecord implements Writable {
 	public int getType(String name) throws IOException {
 		if (names == null || names.size() == 0)
 			throw new IOException("Cannot set record by name if names not initialized");
-		if (!nameMap.containsKey(name)) 
+		if (!nameMap.containsKey(name))
 			throw new IOException("Column \"" + name + "\" does not exist");
 		return types.get(nameMap.get(name));
 	}
@@ -253,7 +253,7 @@ public class VerticaRecord implements Writable {
 	public int getOrdinalPosition(String name) throws IOException {
 		if (names == null || names.size() == 0)
 			throw new IOException("Cannot set record by name if names not initialized");
-		if (!nameMap.containsKey(name)) 
+		if (!nameMap.containsKey(name))
 			throw new IOException("Column \"" + name + "\" does not exist");
 		return nameMap.get(name);
 	}
@@ -268,14 +268,14 @@ public class VerticaRecord implements Writable {
 	public void set(String name, Object value) throws IOException {
 		if (names == null || names.size() == 0)
 			throw new IOException("Cannot set record by name if names not initialized");
-		if (!nameMap.containsKey(name)) 
+		if (!nameMap.containsKey(name))
 			throw new IOException("Column \"" + name + "\" does not exist");
 		set(nameMap.get(name), value);
 	}
 
 	/**
 	  * set a value, 0 indexed
-	  * 
+	  *
 	  * @param i
 	  */
 	public void set(int i, Object value) throws IOException{
@@ -285,18 +285,18 @@ public class VerticaRecord implements Writable {
 		values.set(i, value);
 	}
 
-	public void setFromString(String name, String s) 
-		throws IOException, ParseException 
+	public void setFromString(String name, String s)
+		throws IOException, ParseException
 	{
 		if (names == null || names.size() == 0)
 			throw new IOException("Cannot set record by name if names not initialized");
-		if (!nameMap.containsKey(name)) 
+		if (!nameMap.containsKey(name))
 			throw new IOException("Column \"" + name + "\" does not exist");
 		setFromString(nameMap.get(name), s);
 	}
 
 
-	public void setFromString(Integer index, String s) 
+	public void setFromString(Integer index, String s)
 		throws IOException, ParseException
 	{
 		if (index >= names.size())
@@ -350,7 +350,7 @@ public class VerticaRecord implements Writable {
 					dstIndex++;
 					srcIndex++;
 				}
-			
+
 				for (; srcIndex < len; srcIndex += 2, dstIndex++) {
 					data[dstIndex] = (byte) ((Character.digit(s.charAt(srcIndex), 16) << 4)
 							+ Character.digit(s.charAt(srcIndex+1), 16));
@@ -398,6 +398,22 @@ public class VerticaRecord implements Writable {
 		}
 	}
 
+    public String getHeadersString() {
+        StringBuilder sb = new StringBuilder();
+        for (String s: names) {
+            sb.append(s + "|");
+        }
+        return sb.substring(0, sb.length() - 2);
+    }
+
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < size(); i++) {
+            sb.append(this.get(i) + "|");
+        }
+        return sb.substring(0, sb.length() - 2);
+    }
+
 	public String toString(int index, ResultSet results)
 		throws SQLException {
 		int oneBasedIndex = index + 1;
@@ -419,7 +435,7 @@ public class VerticaRecord implements Writable {
 				|| type == Types.VARBINARY) {
 			byte [] barr = results.getBytes(oneBasedIndex);
 			return new String(barr, 0, barr.length);
-		} else if (type == Types.BOOLEAN || 
+		} else if (type == Types.BOOLEAN ||
 				type == Types.BIT) {
 			if (results.getBoolean(oneBasedIndex))
 				return "true";
@@ -516,18 +532,18 @@ public class VerticaRecord implements Writable {
 					 + " passed to Vertica Record");
 		}
 	}
-	
+
 	public static Object readField(int type, DataInput in) throws IOException {
-		if (type == Types.NULL)			
+		if (type == Types.NULL)
 			return null;
-		else if (type == Types.BIGINT)	
+		else if (type == Types.BIGINT)
 			return in.readLong();
-		else if (type == Types.INTEGER)	
+		else if (type == Types.INTEGER)
 			return in.readInt();
 		else if (type == Types.TINYINT
 				|| type == Types.SMALLINT)
 			return in.readShort();
-		else if (type == Types.REAL 
+		else if (type == Types.REAL
 				|| type == Types.DECIMAL
 				|| type == Types.NUMERIC)
 			return new BigDecimal(Text.readString(in));
@@ -633,7 +649,7 @@ public class VerticaRecord implements Writable {
 				throw new IOException("Unknown type value " + type);
 		}
 	}
-  
+
 	@Override
 	public void write(DataOutput out) throws IOException {
 		out.writeInt(columns);
@@ -641,9 +657,9 @@ public class VerticaRecord implements Writable {
 		for (int i = 0; i < columns; i++) {
 			Object obj = values.get(i);
 			Integer type = types.get(i);
-			if(obj == null) 
+			if(obj == null)
 				out.writeInt(Types.NULL);
-			else 
+			else
 				out.writeInt(type);
 		}
 
@@ -671,7 +687,7 @@ public class VerticaRecord implements Writable {
 				stmt.setString(oneBasedIndex, (String) obj);
 				continue;
 			}
-			
+
 			switch (type) {
 				case Types.BIGINT:
 				case Types.INTEGER:
@@ -730,7 +746,7 @@ public class VerticaRecord implements Writable {
 					break;
 */
 				default:
-					throw new SQLException("Vertica Connector does not know how to process " 
+					throw new SQLException("Vertica Connector does not know how to process "
 							+ types.get(i)
 							+ " for column "
 							+ names.get(i)
